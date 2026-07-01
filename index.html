@@ -64,6 +64,30 @@ body:not(.admin-mode) nav{top:0}
 .btn-admin:hover::before{transform:translateX(0)}
 .btn-admin span{position:relative;z-index:1}
 
+/* NAV RIGHT */
+.nav-right-group{display:flex;align-items:center;gap:1rem}
+
+/* SEARCH */
+.search-wrap{position:relative;display:flex;align-items:center}
+.search-input{width:0;padding:0;border:none;background:transparent;color:var(--white);font-family:var(--font-body);font-size:0.75rem;outline:none;transition:all 0.35s;opacity:0}
+.search-wrap.open .search-input{width:180px;padding:0.5rem 0.8rem;border:1px solid rgba(201,168,76,0.35);background:rgba(20,16,9,0.95);opacity:1}
+.search-icon{color:var(--gold);font-size:1.2rem;cursor:pointer;padding:0.3rem;transition:color 0.2s;user-select:none}
+.search-icon:hover{color:var(--gold-light)}
+.search-results{position:absolute;top:calc(100% + 8px);right:0;width:280px;background:var(--black3);border:1px solid rgba(201,168,76,0.2);max-height:320px;overflow-y:auto;display:none;z-index:500;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+.search-results.show{display:block}
+.search-result-item{padding:0.7rem 1rem;display:flex;align-items:center;gap:0.8rem;cursor:pointer;transition:background 0.2s;border-bottom:1px solid rgba(255,255,255,0.04)}
+.search-result-item:hover{background:rgba(201,168,76,0.07)}
+.search-result-img{width:40px;height:40px;object-fit:cover;background:var(--black4);flex-shrink:0}
+.search-result-info{}
+.search-result-name{font-size:0.75rem;color:var(--white);margin-bottom:0.15rem}
+.search-result-price{font-size:0.65rem;color:var(--gold)}
+.search-no-result{padding:1rem;font-size:0.7rem;color:var(--gray);text-align:center}
+
+/* HERO CATS */
+.hero-cats{display:flex;flex-wrap:wrap;justify-content:center;gap:0.5rem;margin-top:2rem;opacity:0;animation:fade-up 1s ease forwards 1.1s}
+.hero-cat-btn{font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;padding:0.4rem 1rem;border:1px solid rgba(201,168,76,0.25);color:rgba(201,168,76,0.7);background:rgba(201,168,76,0.05);cursor:pointer;transition:all 0.25s;font-family:var(--font-body);backdrop-filter:blur(4px)}
+.hero-cat-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.1)}
+
 /* HERO */
 .hero{height:100vh;min-height:700px;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
 .hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 120% 80% at 50% 50%,rgba(201,168,76,0.1) 0%,transparent 60%)}
@@ -293,6 +317,9 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
 .cat-manage-gender{font-size:0.56rem;color:var(--gray);margin-left:0.4rem}
 .cat-del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:0.65rem;font-family:var(--font-body);opacity:0.7;transition:opacity 0.2s}
 .cat-del-btn:hover{opacity:1}
+.cat-edit-btn{background:none;border:none;color:var(--gold);cursor:pointer;font-size:0.65rem;font-family:var(--font-body);opacity:0.7;transition:opacity 0.2s;margin-right:0.5rem}
+.cat-edit-btn:hover{opacity:1}
+.cat-manage-actions{display:flex;align-items:center}
 .add-cat-row{display:flex;gap:0.5rem;align-items:center}
 .add-cat-row .form-input{flex:1;min-width:0}
 .add-cat-row .form-select{width:95px;flex-shrink:0}
@@ -353,7 +380,12 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
       <span class="nav-link" id="nl-women" onclick="filterGender('women')">Women</span>
       <span class="nav-link" id="nl-men" onclick="filterGender('men')">Men</span>
     </div>
-    <div>
+    <div class="nav-right-group">
+      <div class="search-wrap">
+        <input class="search-input" id="searchInput" placeholder="Search products..." oninput="searchProducts(this.value)" onfocus="this.parentNode.classList.add('open')" onblur="setTimeout(()=>this.parentNode.classList.remove('open'),200)">
+        <span class="search-icon">⌕</span>
+        <div class="search-results" id="searchResults"></div>
+      </div>
       <button class="btn-admin" id="adminBtn" onclick="openLogin()"><span>Admin</span></button>
     </div>
   </div>
@@ -373,8 +405,8 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
       <button class="btn-gold" onclick="scrollToProducts('women')">Shop Women</button>
       <button class="btn-outline" onclick="scrollToProducts('men')">Shop Men</button>
     </div>
+    <div class="hero-cats" id="heroCats"></div>
   </div>
-  <div class="scroll-hint" onclick="document.getElementById('bestPicksSection').scrollIntoView({behavior:'smooth'})" style="cursor:pointer"><span>Scroll</span><div class="scroll-line"></div></div>
 </section>
 
 <!-- BEST PICKS OF THE WEEK -->
@@ -536,13 +568,34 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
   <div class="modal" style="max-width:420px">
     <button class="modal-close" onclick="closeModal('catModal')">✕</button>
     <div class="modal-title">Categories</div>
-    <div class="modal-sub">Manage product categories</div>
+    <div class="modal-sub">Add, edit or remove categories</div>
     <ul class="cat-manage-list" id="catManageList"></ul>
     <div class="add-cat-row">
       <input class="form-input" id="newCatName" placeholder="New category" onkeydown="if(event.key==='Enter')addCategory()">
       <select class="form-select" id="newCatGender"><option value="all">All</option><option value="women">Women</option><option value="men">Men</option></select>
       <button class="btn-sm btn-sm-gold" onclick="addCategory()">Add</button>
     </div>
+  </div>
+</div>
+
+<!-- EDIT CATEGORY MODAL -->
+<div class="modal-bg" id="editCatModal">
+  <div class="modal" style="max-width:380px">
+    <button class="modal-close" onclick="closeModal('editCatModal')">✕</button>
+    <div class="modal-title">Edit Category</div>
+    <div class="modal-sub">Update name or section</div>
+    <input type="hidden" id="editCatId">
+    <div class="form-group"><label class="form-label">Category Name</label><input class="form-input" id="editCatName" placeholder="Category name"></div>
+    <div class="form-group">
+      <label class="form-label">Section</label>
+      <select class="form-select" id="editCatGender">
+        <option value="all">All</option>
+        <option value="women">Women</option>
+        <option value="men">Men</option>
+      </select>
+    </div>
+    <div class="form-error" id="editCatError"></div>
+    <button class="btn-full" onclick="saveEditCat()">Save Changes</button>
   </div>
 </div>
 
@@ -615,6 +668,7 @@ async function loadCategories(){
     const data=await r.json();
     S.categories=Array.isArray(data)?data:[];
     renderCategoryBar();
+    renderHeroCats();
   }catch(e){}
 }
 async function loadProducts(){
@@ -905,8 +959,75 @@ async function saveProduct(){
 function openManageCategories(){renderCatManageList();document.getElementById('catModal').classList.add('show')}
 function renderCatManageList(){
   document.getElementById('catManageList').innerHTML=S.categories.length
-    ?S.categories.map(c=>`<li class="cat-manage-item"><span class="cat-manage-name">${esc(c.name)}<span class="cat-manage-gender">[${c.gender}]</span></span><button class="cat-del-btn" onclick="deleteCat('${c.id}')">Remove</button></li>`).join('')
+    ?S.categories.map(c=>`<li class="cat-manage-item">
+        <span class="cat-manage-name">${esc(c.name)}<span class="cat-manage-gender">[${c.gender}]</span></span>
+        <div class="cat-manage-actions">
+          <button class="cat-edit-btn" onclick="openEditCat('${c.id}')">Edit</button>
+          <button class="cat-del-btn" onclick="deleteCat('${c.id}')">Remove</button>
+        </div>
+      </li>`).join('')
     :'<li style="padding:0.5rem 0;font-size:0.75rem;color:var(--gray)">No categories yet</li>';
+}
+function openEditCat(id){
+  const cat=S.categories.find(c=>c.id===id);if(!cat)return;
+  document.getElementById('editCatId').value=id;
+  document.getElementById('editCatName').value=cat.name;
+  document.getElementById('editCatGender').value=cat.gender;
+  document.getElementById('editCatError').textContent='';
+  document.getElementById('editCatModal').classList.add('show');
+}
+async function saveEditCat(){
+  const id=document.getElementById('editCatId').value;
+  const name=document.getElementById('editCatName').value.trim();
+  const gender=document.getElementById('editCatGender').value;
+  const err=document.getElementById('editCatError');
+  if(!name){err.textContent='Name is required.';return}
+  try{
+    await api(`categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({name,gender})});
+    const cat=S.categories.find(c=>c.id===id);
+    if(cat){cat.name=name;cat.gender=gender}
+    closeModal('editCatModal');
+    renderCatManageList();renderCategoryBar();renderGrid();renderHeroCats();
+    toast('Category updated ✦');
+  }catch(e){err.textContent='Failed to update.'}
+}
+
+// HERO CATS
+function renderHeroCats(){
+  const el=document.getElementById('heroCats');
+  if(!el)return;
+  const cats=S.categories.slice(0,8);
+  if(!cats.length){el.style.display='none';return}
+  el.style.display='flex';
+  el.innerHTML=cats.map(c=>`<button class="hero-cat-btn" onclick="scrollAndFilter('${c.id}')">${esc(c.name)}</button>`).join('');
+}
+function scrollAndFilter(catId){
+  filterGender('all');
+  filterCat(catId);
+  document.getElementById('productsSection').scrollIntoView({behavior:'smooth'});
+}
+
+// SEARCH
+function searchProducts(q){
+  const res=document.getElementById('searchResults');
+  if(!q.trim()){res.classList.remove('show');return}
+  const matches=S.products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).slice(0,6);
+  if(!matches.length){
+    res.innerHTML=`<div class="search-no-result">No products found</div>`;
+    res.classList.add('show');return;
+  }
+  res.innerHTML=matches.map(p=>{
+    const images=Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
+    const price=p.discounted_price||p.original_price||'';
+    return `<div class="search-result-item" onclick="openDetail('${p.id}');document.getElementById('searchResults').classList.remove('show');document.getElementById('searchInput').value=''">
+      ${images[0]?`<img class="search-result-img" src="${esc(images[0])}" alt="">`:`<div class="search-result-img" style="display:flex;align-items:center;justify-content:center;font-family:var(--font-display);color:rgba(201,168,76,0.3);font-size:1.2rem">${(p.name||'A')[0]}</div>`}
+      <div class="search-result-info">
+        <div class="search-result-name">${esc(p.name)}</div>
+        ${price?`<div class="search-result-price">${esc(price)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  res.classList.add('show');
 }
 async function addCategory(){
   const name=document.getElementById('newCatName').value.trim();
