@@ -35,10 +35,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .admin-bar.show{display:flex}
 .admin-bar-inner{max-width:1400px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between}
 .admin-bar-text{font-size:0.58rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:0.5rem;white-space:nowrap}
-.btn-short-text{display:none}
-.btn-full-text{display:inline}
-@media(max-width:480px){
-  .btn-short-text{display:inline}
+
   .btn-full-text{display:none}
   .admin-bar-text{font-size:0.5rem;letter-spacing:0.1em}
   .btn-sm{padding:0.3rem 0.6rem;font-size:0.55rem}
@@ -72,12 +69,6 @@ body:not(.admin-mode) nav{top:0}
 .btn-admin:hover{color:var(--black)}
 .btn-admin:hover::before{transform:translateX(0)}
 .btn-admin span{position:relative;z-index:1}
-
-/* CART ICON */
-.cart-icon-wrap{position:relative;cursor:pointer;padding:0.3rem;transition:transform 0.2s}
-.cart-icon-wrap:hover{transform:scale(1.1)}
-.cart-icon{font-size:1.2rem;filter:grayscale(0.3)}
-.cart-count{position:absolute;top:-4px;right:-4px;background:var(--gold);color:var(--black);font-size:0.5rem;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex!important;align-items:center;justify-content:center;font-family:var(--font-body)}
 
 /* SEARCH */
 .search-wrap{position:relative;display:flex;align-items:center;gap:0.3rem}
@@ -408,11 +399,11 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
 <!-- ADMIN BAR -->
 <div class="admin-bar" id="adminBar">
   <div class="admin-bar-inner">
-    <span class="admin-bar-text"><span class="admin-dot"></span>Admin Mode</span>
+    <span class="admin-bar-text"><span class="admin-dot"></span>Admin</span>
     <div class="admin-bar-actions">
-      <button class="btn-sm btn-sm-gold" onclick="openAddProduct()"><span class="btn-full-text">+ Add Product</span><span class="btn-short-text">+ Add</span></button>
-      <button class="btn-sm btn-sm-gold" onclick="openManageCategories()"><span class="btn-full-text">Categories</span><span class="btn-short-text">Cats</span></button>
-      <button class="btn-sm btn-sm-danger" onclick="logout()">Out</button>
+      <button class="btn-sm btn-sm-gold" onclick="openAddProduct()">+ Add</button>
+      <button class="btn-sm btn-sm-gold" onclick="openManageCategories()">Categories</button>
+      <button class="btn-sm btn-sm-danger" onclick="logout()">Log Out</button>
     </div>
   </div>
 </div>
@@ -435,10 +426,6 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
         <div class="search-results" id="searchResults"></div>
       </div>
       <span class="search-icon-mobile" onclick="openMobileSearch()">⌕</span>
-      <div class="cart-icon-wrap" onclick="openCart()">
-        <span class="cart-icon">🛒</span>
-        <span class="cart-count" id="cartCount" style="display:none">0</span>
-      </div>
       <button class="btn-admin" id="adminBtn" onclick="openLogin()"><span>Admin</span></button>
     </div>
   </div>
@@ -542,7 +529,6 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
         <div class="detail-items-title" id="detailItemsTitle"></div>
         <div class="detail-items" id="detailItems"></div>
       </div>
-      <button class="btn-full" style="background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);margin-top:0" id="addToCartBtn" onclick="addToCart()">+ Add to Cart</button>
     </div>
   </div>
 </div>
@@ -664,24 +650,6 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
   </div>
 </div>
 
-<!-- CART MODAL -->
-<div class="modal-bg" id="cartModal">
-  <div class="modal" style="max-width:480px">
-    <button class="modal-close" onclick="closeModal('cartModal')">✕</button>
-    <div class="modal-title">Your Cart</div>
-    <div class="modal-sub">Items you want to buy</div>
-    <div id="cartItems"></div>
-    <div id="cartEmpty" style="text-align:center;padding:2rem;color:var(--gray);font-size:0.75rem;display:none">Your cart is empty</div>
-    <div id="cartFooter" style="display:none;margin-top:1rem;border-top:1px solid var(--gray3);padding-top:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <span style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray)">Total Items</span>
-        <span style="color:var(--gold);font-family:var(--font-display);font-size:1.1rem" id="cartTotal">0</span>
-      </div>
-      <button class="btn-full" style="background:var(--red);margin-top:0" onclick="clearCart()">Clear Cart</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -700,7 +668,7 @@ const api=(path,opts={})=>fetch(`${SUPABASE_URL}/rest/v1/${path}`,{
 
 let S={isAdmin:false,activeGender:'all',activeCategory:'all',categories:[],products:[],
   productMode:'single',selectedCatId:null,comboItems:[],imageFields:1,
-  detailSlideIdx:0,detailImages:[],cart:[]};
+  detailSlideIdx:0,detailImages:[]};
 
 // CURSOR
 const cur=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
@@ -913,7 +881,7 @@ function openDetail(id){
 
   document.getElementById('detailBg').classList.add('show');
   document.body.style.overflow='hidden';
-  S.currentProductId=id;
+
 }
 
 function closeDetailModal(){document.getElementById('detailBg').classList.remove('show');document.body.style.overflow=''}
@@ -1237,7 +1205,7 @@ async function deleteCat(id){
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 function scrollToProducts(g){if(g)filterGender(g);document.getElementById('productsSection').scrollIntoView({behavior:'smooth'})}
 
-loadCategories();loadProducts();loadCart();
+loadCategories();loadProducts();
 </script>
 </body>
 </html>
