@@ -81,8 +81,11 @@ body:not(.admin-mode) nav{top:0}
 .search-result-item{padding:0.7rem 1rem;display:flex;align-items:center;gap:0.8rem;cursor:pointer;transition:background 0.2s;border-bottom:1px solid rgba(255,255,255,0.04)}
 .search-result-item:hover{background:rgba(201,168,76,0.07)}
 .search-result-img{width:42px;height:42px;object-fit:cover;background:var(--black4);flex-shrink:0}
-.search-result-name{font-size:0.75rem;color:var(--white);margin-bottom:0.15rem}
-.search-result-price{font-size:0.65rem;color:var(--gold)}
+.search-result-name{font-size:0.75rem;color:var(--white);margin-bottom:0.2rem}
+.search-result-meta{display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;margin-top:0.2rem}
+.search-result-price{font-size:0.65rem;color:var(--gold);font-weight:600}
+.search-result-cat{font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.1rem 0.4rem;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.2)}
+.search-result-gender{font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.1rem 0.4rem;background:rgba(255,255,255,0.05);color:var(--gray)}
 .search-no-result{padding:1rem;font-size:0.7rem;color:var(--gray);text-align:center}
 
 /* NAV RIGHT */
@@ -399,9 +402,9 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
 <!-- ADMIN BAR -->
 <div class="admin-bar" id="adminBar">
   <div class="admin-bar-inner">
-    <span class="admin-bar-text"><span class="admin-dot"></span>Admin</span>
+    <span class="admin-bar-text"><span class="admin-dot"></span>Admin Mode Active</span>
     <div class="admin-bar-actions">
-      <button class="btn-sm btn-sm-gold" onclick="openAddProduct()">+ Add</button>
+      <button class="btn-sm btn-sm-gold" onclick="openAddProduct()">+ Add Product</button>
       <button class="btn-sm btn-sm-gold" onclick="openManageCategories()">Categories</button>
       <button class="btn-sm btn-sm-danger" onclick="logout()">Log Out</button>
     </div>
@@ -1107,9 +1110,10 @@ function mobileSearch(q){
   container.innerHTML=matches.map(p=>{
     const images=Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
     const price=p.discounted_price||p.original_price||'';
+    const cat=S.categories.find(c=>c.id===p.category_id);
     const imgHtml=images[0]?'<img class="search-result-img" src="'+esc(images[0])+'" alt="">':'<div class="search-result-img" style="display:flex;align-items:center;justify-content:center;color:rgba(201,168,76,0.3);font-size:1.2rem">'+(p.name||'A')[0]+'</div>';
-    const priceHtml=price?'<div class="search-result-price">'+esc(price)+'</div>':'';
-    return '<div class="search-result-item" onclick="saveRecent(\''+esc(q)+'\');openDetail(\''+p.id+'\');closeMobileSearch()">'+imgHtml+'<div><div class="search-result-name">'+esc(p.name)+'</div>'+priceHtml+'</div></div>';
+    const metaHtml='<div class="search-result-meta">'+(price?'<span class="search-result-price">'+esc(price)+'</span>':'')+(cat?'<span class="search-result-cat">'+esc(cat.name)+'</span>':'')+'<span class="search-result-gender">'+esc(p.gender)+'</span></div>';
+    return '<div class="search-result-item" onclick="saveRecent(\''+esc(q)+'\');openDetail(\''+p.id+'\');closeMobileSearch()">'+imgHtml+'<div><div class="search-result-name">'+esc(p.name)+'</div>'+metaHtml+'</div></div>';
   }).join('');
 }
 
@@ -1122,56 +1126,6 @@ function toggleSearch(){
   else{wrap.classList.add('open');setTimeout(()=>input.focus(),50)}
 }
 
-// CART - persisted to localStorage
-function loadCart(){try{S.cart=JSON.parse(localStorage.getItem('ah_cart')||'[]')}catch{S.cart=[]}updateCartCount()}
-function saveCart(){try{localStorage.setItem('ah_cart',JSON.stringify(S.cart))}catch{}}
-function addToCart(){
-  const p=S.products.find(x=>x.id===S.currentProductId);
-  if(!p){toast('Could not add to cart');return}
-  if(S.cart.find(i=>i.productId===p.id)){toast('Already in cart!');return}
-  const images=Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
-  const price=p.discounted_price||p.original_price||'';
-  const productItems=Array.isArray(p.items)?p.items:[];
-  const id='cart_'+Date.now();
-  S.cart.push({id,productId:p.id,name:p.name,price,img:images[0]||'',items:productItems});
-  saveCart();updateCartCount();toast('Added to cart ✦');
-}
-function updateCartCount(){
-  const count=S.cart.length;
-  const el=document.getElementById('cartCount');
-  el.textContent=count;
-  el.style.display=count>0?'flex':'none';
-}
-function openCart(){
-  renderCartItems();
-  document.getElementById('cartModal').classList.add('show');
-}
-function renderCartItems(){
-  const container=document.getElementById('cartItems');
-  const empty=document.getElementById('cartEmpty');
-  const footer=document.getElementById('cartFooter');
-  if(!S.cart.length){container.innerHTML='';empty.style.display='block';footer.style.display='none';return}
-  empty.style.display='none';footer.style.display='block';
-  document.getElementById('cartTotal').textContent=S.cart.length+' item'+(S.cart.length>1?'s':'');
-  container.innerHTML=S.cart.map(item=>`
-    <div class="cart-item">
-      ${item.img?`<img class="cart-item-img" src="${esc(item.img)}" alt="">`:`<div class="cart-item-img" style="display:flex;align-items:center;justify-content:center;font-family:var(--font-display);color:rgba(201,168,76,0.3)">${(item.name||'A')[0]}</div>`}
-      <div class="cart-item-info">
-        <div class="cart-item-name">${esc(item.name)}</div>
-        ${item.price?`<div class="cart-item-price">${esc(item.price)}</div>`:''}
-        ${item.items.length?`<div class="cart-item-source">${item.items.map(i=>esc(i.source)).join(' · ')}</div>`:''}
-      </div>
-      ${item.items[0]?.link?`<button class="cart-item-shop" onclick="window.open('${esc(item.items[0].link)}','_blank')">Buy ↗</button>`:''}
-      <button class="cart-item-remove" onclick="removeFromCart('${item.id}')">✕</button>
-    </div>`).join('');
-}
-function removeFromCart(id){
-  S.cart=S.cart.filter(i=>i.id!==id);
-  saveCart();updateCartCount();renderCartItems();toast('Removed from cart');
-}
-function clearCart(){
-  S.cart=[];saveCart();updateCartCount();renderCartItems();toast('Cart cleared');
-}
 function searchProducts(q){
   const res=document.getElementById('searchResults');
   if(!q.trim()){res.classList.remove('show');return}
@@ -1180,9 +1134,10 @@ function searchProducts(q){
   res.innerHTML=matches.map(p=>{
     const images=Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
     const price=p.discounted_price||p.original_price||'';
+    const cat=S.categories.find(c=>c.id===p.category_id);
     const imgHtml=images[0]?'<img class="search-result-img" src="'+esc(images[0])+'" alt="">':'<div class="search-result-img" style="display:flex;align-items:center;justify-content:center;color:rgba(201,168,76,0.3)">'+(p.name||'A')[0]+'</div>';
-    const priceHtml=price?'<div class="search-result-price">'+esc(price)+'</div>':'';
-    return '<div class="search-result-item" onclick="saveRecent(\''+q+'\');openDetail(\''+p.id+'\');document.getElementById(\'searchResults\').classList.remove(\'show\');document.getElementById(\'searchInput\').value=\'\'">'+imgHtml+'<div><div class="search-result-name">'+esc(p.name)+'</div>'+priceHtml+'</div></div>';
+    const metaHtml='<div class="search-result-meta">'+(price?'<span class="search-result-price">'+esc(price)+'</span>':'')+(cat?'<span class="search-result-cat">'+esc(cat.name)+'</span>':'')+'<span class="search-result-gender">'+esc(p.gender)+'</span></div>';
+    return '<div class="search-result-item" onclick="saveRecent(\''+q+'\');openDetail(\''+p.id+'\');document.getElementById(\'searchResults\').classList.remove(\'show\');document.getElementById(\'searchInput\').value=\'\'">'+imgHtml+'<div><div class="search-result-name">'+esc(p.name)+'</div>'+metaHtml+'</div></div>';
   }).join('');
   res.classList.add('show');
 }
