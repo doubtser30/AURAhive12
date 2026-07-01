@@ -34,7 +34,16 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   border-bottom:1px solid rgba(201,168,76,0.5);padding:0 2rem;box-shadow:0 2px 30px rgba(201,168,76,0.1)}
 .admin-bar.show{display:flex}
 .admin-bar-inner{max-width:1400px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between}
-.admin-bar-text{font-size:0.58rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:0.5rem}
+.admin-bar-text{font-size:0.58rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:0.5rem;white-space:nowrap}
+.btn-short-text{display:none}
+.btn-full-text{display:inline}
+@media(max-width:480px){
+  .btn-short-text{display:inline}
+  .btn-full-text{display:none}
+  .admin-bar-text{font-size:0.5rem;letter-spacing:0.1em}
+  .btn-sm{padding:0.3rem 0.6rem;font-size:0.55rem}
+  .admin-dot{display:none}
+}
 .admin-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse-dot 2s infinite}
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
 .admin-bar-actions{display:flex;gap:0.6rem}
@@ -399,11 +408,11 @@ footer p{font-size:0.58rem;letter-spacing:0.18em;color:var(--gray2);text-transfo
 <!-- ADMIN BAR -->
 <div class="admin-bar" id="adminBar">
   <div class="admin-bar-inner">
-    <span class="admin-bar-text"><span class="admin-dot"></span>Admin Mode Active</span>
+    <span class="admin-bar-text"><span class="admin-dot"></span>Admin Mode</span>
     <div class="admin-bar-actions">
-      <button class="btn-sm btn-sm-gold" onclick="openAddProduct()">+ Add Product</button>
-      <button class="btn-sm btn-sm-gold" onclick="openManageCategories()">Categories</button>
-      <button class="btn-sm btn-sm-danger" onclick="logout()">Log Out</button>
+      <button class="btn-sm btn-sm-gold" onclick="openAddProduct()"><span class="btn-full-text">+ Add Product</span><span class="btn-short-text">+ Add</span></button>
+      <button class="btn-sm btn-sm-gold" onclick="openManageCategories()"><span class="btn-full-text">Categories</span><span class="btn-short-text">Cats</span></button>
+      <button class="btn-sm btn-sm-danger" onclick="logout()">Out</button>
     </div>
   </div>
 </div>
@@ -1145,17 +1154,19 @@ function toggleSearch(){
   else{wrap.classList.add('open');setTimeout(()=>input.focus(),50)}
 }
 
-// CART
+// CART - persisted to localStorage
+function loadCart(){try{S.cart=JSON.parse(localStorage.getItem('ah_cart')||'[]')}catch{S.cart=[]}updateCartCount()}
+function saveCart(){try{localStorage.setItem('ah_cart',JSON.stringify(S.cart))}catch{}}
 function addToCart(){
   const p=S.products.find(x=>x.id===S.currentProductId);
   if(!p){toast('Could not add to cart');return}
+  if(S.cart.find(i=>i.productId===p.id)){toast('Already in cart!');return}
   const images=Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
   const price=p.discounted_price||p.original_price||'';
   const productItems=Array.isArray(p.items)?p.items:[];
   const id='cart_'+Date.now();
-  S.cart.push({id,name:p.name,price,img:images[0]||'',items:productItems});
-  updateCartCount();
-  toast('Added to cart ✦');
+  S.cart.push({id,productId:p.id,name:p.name,price,img:images[0]||'',items:productItems});
+  saveCart();updateCartCount();toast('Added to cart ✦');
 }
 function updateCartCount(){
   const count=S.cart.length;
@@ -1188,10 +1199,10 @@ function renderCartItems(){
 }
 function removeFromCart(id){
   S.cart=S.cart.filter(i=>i.id!==id);
-  updateCartCount();renderCartItems();toast('Removed from cart');
+  saveCart();updateCartCount();renderCartItems();toast('Removed from cart');
 }
 function clearCart(){
-  S.cart=[];updateCartCount();renderCartItems();toast('Cart cleared');
+  S.cart=[];saveCart();updateCartCount();renderCartItems();toast('Cart cleared');
 }
 function searchProducts(q){
   const res=document.getElementById('searchResults');
@@ -1226,7 +1237,7 @@ async function deleteCat(id){
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 function scrollToProducts(g){if(g)filterGender(g);document.getElementById('productsSection').scrollIntoView({behavior:'smooth'})}
 
-loadCategories();loadProducts();
+loadCategories();loadProducts();loadCart();
 </script>
 </body>
 </html>
